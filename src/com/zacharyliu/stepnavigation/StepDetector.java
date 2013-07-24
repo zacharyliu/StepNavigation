@@ -37,7 +37,7 @@ public class StepDetector implements ICustomSensor {
 			acceleration = Math.sqrt(acceleration) / 9.8;
 //			Log.d(TAG, Double.toString(acceleration));
 			if (acceleration > ACCELERATION_THRESHOLD) {
-				long time = SystemClock.currentThreadTimeMillis();
+				long time = SystemClock.elapsedRealtime();
 				if (time - lastActive > RELEASE_THRESHOLD) {
 					mListener.onStep();
 				}

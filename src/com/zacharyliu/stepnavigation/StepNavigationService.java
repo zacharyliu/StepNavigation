@@ -17,7 +17,7 @@ import com.zacharyliu.stepnavigation.StepDetector.StepDetectorListener;
 
 public class StepNavigationService extends Service {
 
-	private final String TAG = "MainActivity";
+	private final String TAG = "StepNavigationService";
 	private final double STEP_LENGTH_METERS = 0.8; // http://www.wolframalpha.com/input/?i=step+length+in+meters
 	private final double EARTH_RADIUS_KILOMETERS = 6371;
 	private double mHeading = 0.0;
@@ -38,6 +38,7 @@ public class StepNavigationService extends Service {
 	
 	@Override
 	public IBinder onBind(Intent intent) {
+		Log.d(TAG, "Service bound");
 		sensors.add(new CompassHeading(this, new CompassHeadingListener() {
 			@Override
 			public void onHeadingUpdate(double heading) {
@@ -123,9 +124,10 @@ public class StepNavigationService extends Service {
 		lat2 = Math.toDegrees(lat2);
 		lon2 = Math.toDegrees(lon2);
 		
-		Log.d(TAG, "delta lat: " + Double.toString(lat2-lat1) + ", delta lon: " + Double.toString(lon2-lon1)); 
+		Log.v(TAG, "delta lat: " + Double.toString(lat2-currentLoc[0]) + ", delta lon: " + Double.toString(lon2-currentLoc[1])); 
 		
 		double[] newLoc = {lat2, lon2};
+		currentLoc = newLoc;
 		callListeners(newLoc);
 	}
 
@@ -139,6 +141,14 @@ public class StepNavigationService extends Service {
 		public StepNavigationService getService() {
 			return StepNavigationService.this;
 		}
+	}
+	
+	public void register(StepNavigationListener listener) {
+		listeners.add(listener);
+	}
+	
+	public void unregister(StepNavigationListener listener) {
+		listeners.remove(listener);
 	}
 
 }
