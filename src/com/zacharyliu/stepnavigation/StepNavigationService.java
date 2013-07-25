@@ -181,6 +181,8 @@ public class StepNavigationService extends Service {
 		// Exit if not ready for location calculation
 		if (!headingReady || currentLoc == null)
 			return;
+		
+		calculateNewLocation();
 	}
 
 	private void calculateNewLocation() {
