@@ -83,8 +83,7 @@ public class StepNavigationService extends Service {
 			public void onLocationUpdate(double[] loc) {
 				gpsReady = true;
 				if (isCalibrating) {
-					currentLoc = loc;
-					callListeners(loc);
+					onNewLocation(loc);
 				}
 			}
 		});
@@ -156,7 +155,7 @@ public class StepNavigationService extends Service {
 
 	private void onStep() {
 		Log.d(TAG, "step");
-		
+
 		// TODO: Determine if recalibration is needed
 
 		// If GPS is on, add to the calibration history
@@ -182,10 +181,11 @@ public class StepNavigationService extends Service {
 		// Exit if not ready for location calculation
 		if (!headingReady || currentLoc == null)
 			return;
+	}
 
+	private void calculateNewLocation() {
 		// Calculate new location
 		// Formula: http://www.movable-type.co.uk/scripts/latlong.html#destPoint
-		// (angles in radians)
 		double lat1 = Math.toRadians(currentLoc[0]); // starting latitude
 		double lon1 = Math.toRadians(currentLoc[1]); // starting longitude
 		double brng = Math.toRadians(realHeading); // bearing
@@ -203,11 +203,11 @@ public class StepNavigationService extends Service {
 				+ ", delta lon: " + Double.toString(lon2 - currentLoc[1]));
 
 		double[] newLoc = { lat2, lon2 };
-		currentLoc = newLoc;
-		callListeners(newLoc);
+		onNewLocation(newLoc);
 	}
 
-	private void callListeners(double[] loc) {
+	private void onNewLocation(double[] loc) {
+		currentLoc = loc;
 		for (StepNavigationListener listener : listeners) {
 			listener.onLocationUpdate(loc[0], loc[1]);
 		}
