@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Queue;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
+import android.os.Vibrator;
 import android.util.Log;
 
 import com.zacharyliu.stepnavigation.CompassHeading.CompassHeadingListener;
@@ -21,7 +23,7 @@ public class StepNavigationService extends Service {
 	private final String TAG = "StepNavigationService";
 	private final double STEP_LENGTH_METERS = 0.8; // http://www.wolframalpha.com/input/?i=step+length+in+meters
 	private final double EARTH_RADIUS_KILOMETERS = 6371;
-	private final int HISTORY_COUNT = 50;
+	private final int HISTORY_COUNT = 10;
 	private final double CALIBRATION_THRESHOLD = 10.0;
 
 	// Object storage
@@ -31,9 +33,8 @@ public class StepNavigationService extends Service {
 	private GpsBearing gps;
 
 	// State variables
-	private boolean isCalibrating = true;
+	private boolean calibrated = false;
 	private boolean gpsReady = false;
-	private boolean headingReady = false;
 	private double mHeading = 0.0;
 	private double mBearing = 0.0;
 	private Queue<Double> history = new LinkedList<Double>();
@@ -82,7 +83,7 @@ public class StepNavigationService extends Service {
 			@Override
 			public void onLocationUpdate(double[] loc) {
 				gpsReady = true;
-				if (isCalibrating) {
+				if (!calibrated) {
 					onNewLocation(loc);
 				}
 			}
@@ -114,8 +115,10 @@ public class StepNavigationService extends Service {
 		Log.d(TAG, "Calibration begin");
 
 		// If history is not filled completely, exit
-		if (history.size() != HISTORY_COUNT)
+		if (history.size() != HISTORY_COUNT) {
+			Log.d(TAG, "Not enough history entries");
 			return false;
+		}
 
 		// Take standard deviation
 		double sum = 0.0;
@@ -146,6 +149,7 @@ public class StepNavigationService extends Service {
 
 	// Private methods
 	private void onDirectionUpdate() {
+		Log.v(TAG, "Compass heading: " + Double.toString(mHeading));
 		realHeading = mHeading + correctionFactor;
 		if (realHeading > 360)
 			realHeading -= 360;
@@ -155,8 +159,6 @@ public class StepNavigationService extends Service {
 
 	private void onStep() {
 		Log.d(TAG, "step");
-
-		// TODO: Determine if recalibration is needed
 
 		// If GPS is on, add to the calibration history
 		if (gpsReady) {
@@ -168,21 +170,22 @@ public class StepNavigationService extends Service {
 			}
 		}
 
-		// Try to calibrate
-		if (isCalibrating) {
-			if (!calibrate()) {
-				Log.d(TAG, "Calibration exited");
-				return;
-			} else {
-				isCalibrating = false;
-			}
+		// TODO: Determine if recalibration is needed
+		if (calibrated) {
+			// phone removed, orientation changed, etc.
 		}
 
-		// Exit if not ready for location calculation
-		if (!headingReady || currentLoc == null)
-			return;
-		
-		calculateNewLocation();
+		// Try to calibrate if not yet calibrated
+		if (!calibrated && calibrate()) {
+			// Calibration was successful
+			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+			v.vibrate(200);
+			calibrated = true;
+		}
+
+		// Calculate new location if possible
+		if (calibrated && currentLoc != null)
+			calculateNewLocation();
 	}
 
 	private void calculateNewLocation() {

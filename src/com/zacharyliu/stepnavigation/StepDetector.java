@@ -51,7 +51,7 @@ public class StepDetector implements ICustomSensor {
 	
 	public void resume() {
 		mSensorManager.registerListener(mSensorEventListener, accelerometer,
-				SensorManager.SENSOR_DELAY_UI);
+				SensorManager.SENSOR_DELAY_NORMAL);
 	}
 	
 	public void pause() {

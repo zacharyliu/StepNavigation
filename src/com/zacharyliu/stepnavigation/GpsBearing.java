@@ -16,6 +16,8 @@ public class GpsBearing implements ICustomSensor {
 		mListener = listener;
 	}
 	
+	protected GpsBearing() {}
+	
 	public interface GpsBearingListener {
 		public void onBearingUpdate(double bearing);
 		public void onLocationUpdate(double[] loc);
