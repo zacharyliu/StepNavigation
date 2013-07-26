@@ -160,6 +160,7 @@ public class StepNavigationService extends Service {
 
 	private void onStep() {
 		Log.d(TAG, "step");
+		Log.d(TAG, String.format("Compass: %.3f", mHeading));
 
 		// If GPS is on, add to the calibration history
 		if (gpsReady && mBearing != 0.0) {

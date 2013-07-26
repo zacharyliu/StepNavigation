@@ -5,9 +5,11 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.util.Log;
 
 public class CompassHeading implements ICustomSensor {
 	
+	private final String TAG = "CompassHeading";
 	private SensorManager mSensorManager;
 	private Sensor accelerometer;
 	private Sensor magnetometer;
@@ -16,7 +18,7 @@ public class CompassHeading implements ICustomSensor {
 	public CompassHeading(Context context, CompassHeadingListener listener) {
 		mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
 		accelerometer = mSensorManager
-				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+				.getDefaultSensor(Sensor.TYPE_GRAVITY);
 		magnetometer = mSensorManager
 				.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 		mListener = listener;
@@ -30,6 +32,7 @@ public class CompassHeading implements ICustomSensor {
 		private float[] accelReadings;
 		private float[] magnetReadings;
 		private double azimuth;
+		private double z;
 		private boolean azimuthReady;
 
 		@Override
@@ -37,8 +40,15 @@ public class CompassHeading implements ICustomSensor {
 
 		@Override
 		public void onSensorChanged(SensorEvent event) {
+//			if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+//				float[] readings = event.values;
+//				double angle = Math.toDegrees(Math.atan(readings[2] / readings[0]));
+//				angle = 360 - (angle + 90);
+//				mListener.onHeadingUpdate(angle);
+//			}
+			
 			switch (event.sensor.getType()) {
-				case Sensor.TYPE_ACCELEROMETER:
+				case Sensor.TYPE_GRAVITY:
 					accelReadings = event.values.clone();
 					break;
 				case Sensor.TYPE_MAGNETIC_FIELD:
@@ -53,11 +63,22 @@ public class CompassHeading implements ICustomSensor {
 					float[] values = new float[3];
 					SensorManager.getOrientation(R, values);
 					azimuth = Math.toDegrees(values[0]);
+//					roll = Math.toDegrees(values[2]);
+//					if (roll > 90 || roll < -90) {
+//						// Upside down, flip azimuth
+//						azimuth += 180;
+//					}
+//					z = accelReadings[2];
+//					if (z > 0) {
+//						azimuth += 180;
+//					}
 					if (azimuth < 0) {
-						azimuth += 360.0;
+						azimuth += 360;
+					} else if (azimuth > 360) {
+						azimuth -= 360;
 					}
 					if (!azimuthReady) azimuthReady = true;
-					mListener.onHeadingUpdate(azimuth);
+					//mListener.onHeadingUpdate(azimuth);
 				}
 			}
 		}
