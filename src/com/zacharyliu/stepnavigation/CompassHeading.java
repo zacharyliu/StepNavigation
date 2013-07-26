@@ -28,12 +28,16 @@ public class CompassHeading implements ICustomSensor {
 		public void onHeadingUpdate(double heading);
 	}
 	
+	private int count = 0;
+	private final int COUNT_MAX = 5;
 	private SensorEventListener mSensorEventListener = new SensorEventListener() {
 		private float[] accelReadings;
 		private float[] magnetReadings;
 		private double azimuth;
 		private double z;
 		private boolean azimuthReady;
+		private boolean accelReady = false;
+		private boolean magnetReady = false;
 
 		@Override
 		public void onAccuracyChanged(Sensor sensor, int accuracy) {}
@@ -50,12 +54,14 @@ public class CompassHeading implements ICustomSensor {
 			switch (event.sensor.getType()) {
 				case Sensor.TYPE_GRAVITY:
 					accelReadings = event.values.clone();
+					accelReady = true;
 					break;
 				case Sensor.TYPE_MAGNETIC_FIELD:
 					magnetReadings = event.values.clone();
+					magnetReady = true;
 					break;
 			}
-			if (accelReadings != null && magnetReadings != null) {
+			if (accelReady == true && magnetReady == true) {
 				float[] R = new float[9];
 				float[] I = new float[9];
 				boolean success = SensorManager.getRotationMatrix(R, I, accelReadings, magnetReadings);
@@ -68,18 +74,29 @@ public class CompassHeading implements ICustomSensor {
 //						// Upside down, flip azimuth
 //						azimuth += 180;
 //					}
-//					z = accelReadings[2];
-//					if (z > 0) {
-//						azimuth += 180;
-//					}
+					count++;
+					z = accelReadings[2];
+					if (z < 0) {
+						if (count == COUNT_MAX)
+							Log.d(TAG, "Flip");
+						azimuth += 180;
+					}
 					if (azimuth < 0) {
 						azimuth += 360;
 					} else if (azimuth > 360) {
 						azimuth -= 360;
 					}
 					if (!azimuthReady) azimuthReady = true;
-					//mListener.onHeadingUpdate(azimuth);
+					mListener.onHeadingUpdate(azimuth);
+					if (count == COUNT_MAX) {
+						Log.d(TAG, Double.toString(azimuth));
+						count = 0;
+					}
 				}
+				
+				// Require a set of new values for each sensor
+				accelReady = false;
+				magnetReady = false;
 			}
 		}
 	};
