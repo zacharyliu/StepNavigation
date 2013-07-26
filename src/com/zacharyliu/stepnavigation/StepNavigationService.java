@@ -162,7 +162,7 @@ public class StepNavigationService extends Service {
 		Log.d(TAG, "step");
 
 		// If GPS is on, add to the calibration history
-		if (gpsReady) {
+		if (gpsReady && mBearing != 0.0) {
 			Log.d(TAG, String.format("History add: GPS %.2f | compass %.2f", mBearing, mHeading));
 			// Add the current heading difference to the list
 			double diff = mBearing - mHeading;
