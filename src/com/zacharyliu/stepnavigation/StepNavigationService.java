@@ -82,6 +82,7 @@ public class StepNavigationService extends Service {
 
 			@Override
 			public void onLocationUpdate(double[] loc) {
+				Log.d(TAG, "GPS location updated");
 				gpsReady = true;
 				if (!calibrated) {
 					onNewLocation(loc);
@@ -149,7 +150,7 @@ public class StepNavigationService extends Service {
 
 	// Private methods
 	private void onDirectionUpdate() {
-		Log.v(TAG, "Compass heading: " + Double.toString(mHeading));
+//		Log.v(TAG, "Compass heading: " + Double.toString(mHeading));
 		realHeading = mHeading + correctionFactor;
 		if (realHeading > 360)
 			realHeading -= 360;
@@ -162,17 +163,24 @@ public class StepNavigationService extends Service {
 
 		// If GPS is on, add to the calibration history
 		if (gpsReady) {
+			Log.d(TAG, String.format("History add: GPS %.2f | compass %.2f", mBearing, mHeading));
 			// Add the current heading difference to the list
 			double diff = mBearing - mHeading;
 			history.add(diff);
 			while (history.size() > HISTORY_COUNT) {
 				history.remove();
 			}
+		} else {
+			Log.d(TAG, "GPS not ready");
 		}
 
 		// TODO: Determine if recalibration is needed
 		if (calibrated) {
 			// phone removed, orientation changed, etc.
+			// if calibrationNeeded
+			//     gps.on()
+			//     gpsReady = false
+			//     calibrated = false
 		}
 
 		// Try to calibrate if not yet calibrated
@@ -181,6 +189,7 @@ public class StepNavigationService extends Service {
 			Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 			v.vibrate(200);
 			calibrated = true;
+			gps.off();
 		}
 
 		// Calculate new location if possible

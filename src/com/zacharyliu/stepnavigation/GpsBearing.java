@@ -10,19 +10,23 @@ public class GpsBearing implements ICustomSensor {
 
 	private LocationManager mLocationManager;
 	private GpsBearingListener mListener;
+	private boolean enabled = true;
 
 	public GpsBearing(Context context, GpsBearingListener listener) {
-		mLocationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+		mLocationManager = (LocationManager) context
+				.getSystemService(Context.LOCATION_SERVICE);
 		mListener = listener;
 	}
-	
-	protected GpsBearing() {}
-	
+
+	protected GpsBearing() {
+	}
+
 	public interface GpsBearingListener {
 		public void onBearingUpdate(double bearing);
+
 		public void onLocationUpdate(double[] loc);
 	}
-	
+
 	private LocationListener mLocationListener = new LocationListener() {
 		private float bearing;
 
@@ -30,27 +34,47 @@ public class GpsBearing implements ICustomSensor {
 		public void onLocationChanged(Location location) {
 			bearing = location.getBearing();
 			mListener.onBearingUpdate(bearing);
-			
-			double[] loc = {location.getLatitude(), location.getLongitude()};
+
+			double[] loc = { location.getLatitude(), location.getLongitude() };
 			mListener.onLocationUpdate(loc);
 		}
 
 		@Override
-		public void onProviderDisabled(String provider) {}
+		public void onProviderDisabled(String provider) {
+		}
 
 		@Override
-		public void onProviderEnabled(String provider) {}
+		public void onProviderEnabled(String provider) {
+		}
 
 		@Override
-		public void onStatusChanged(String provider, int status, Bundle extras) {}
+		public void onStatusChanged(String provider, int status, Bundle extras) {
+		}
 	};
-	
+
 	public void resume() {
-		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+		if (enabled)
+			mLocationManager.requestLocationUpdates(
+					LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
 	}
-	
+
 	public void pause() {
-		mLocationManager.removeUpdates(mLocationListener);
+		if (enabled)
+			mLocationManager.removeUpdates(mLocationListener);
 	}
-	
+
+	public void on() {
+		if (enabled)
+			return;
+		enabled = true;
+		resume();
+	}
+
+	public void off() {
+		if (!enabled)
+			return;
+		enabled = false;
+		pause();
+	}
+
 }
