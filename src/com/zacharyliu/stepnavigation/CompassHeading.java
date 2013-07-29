@@ -55,28 +55,22 @@ public class CompassHeading implements ICustomSensor {
 		
 		@Override
 		public void onSensorChanged(SensorEvent event) {
-//			if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-//				float[] readings = event.values;
-//				double angle = Math.toDegrees(Math.atan(readings[2] / readings[0]));
-//				angle = 360 - (angle + 90);
-//				mListener.onHeadingUpdate(angle);
-//			}
+			float[] readings = event.values.clone();
+			
+			// Swap y and z axes to change azimuth to read based on screen facing direction
+			y = readings[1];
+			z = readings[2];
+			// Need to make one axis negative to maintain right-hand system since only one axis swap made
+			readings[2] = -y;
+			readings[1] = z;
 			
 			switch (event.sensor.getType()) {
 				case Sensor.TYPE_GRAVITY:
-					accelReadings = event.values.clone();
-					y = accelReadings[1];
-					z = accelReadings[2];
-					accelReadings[2] = -y;
-					accelReadings[1] = z;
+					accelReadings = readings;
 					accelReady = true;
 					break;
 				case Sensor.TYPE_MAGNETIC_FIELD:
-					magnetReadings = event.values.clone();
-					y = magnetReadings[1];
-					z = magnetReadings[2];
-					magnetReadings[2] = -y;
-					magnetReadings[1] = z;
+					magnetReadings = readings;
 					magnetReady = true;
 					break;
 			}
