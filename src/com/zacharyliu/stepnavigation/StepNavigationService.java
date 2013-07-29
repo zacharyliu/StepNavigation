@@ -180,7 +180,7 @@ public class StepNavigationService extends Service {
 
 		// If GPS is on, add to the calibration history
 		if (gpsReady && mBearing != 0.0) {
-			Log.d(TAG, String.format("History add: GPS %.2f | compass %.2f", mBearing, mHeading));
+			
 			// Add the current heading difference to the list
 			double diff = mBearing - mHeading;
 			history.add(diff);
@@ -210,8 +210,12 @@ public class StepNavigationService extends Service {
 		}
 
 		// Calculate new location if possible
-		if (calibrated && currentLoc != null)
+		if (calibrated && currentLoc != null) {
+			Log.d(TAG, String.format("GPS %.2f | compass %.2f | calibrated %.2f", mBearing, mHeading, realHeading));
 			calculateNewLocation();
+		} else {
+			Log.d(TAG, String.format("GPS %.2f | compass %.2f", mBearing, mHeading));
+		}
 	}
 
 	private void calculateNewLocation() {

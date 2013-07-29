@@ -9,8 +9,8 @@ import android.os.SystemClock;
 
 public class StepDetector implements ICustomSensor {
 
-	private final double ACCELERATION_THRESHOLD = 1.2;
-	private final int RELEASE_THRESHOLD = 200;
+	private final double ACCELERATION_THRESHOLD = 1.3;
+	private final int RELEASE_THRESHOLD = 150;
 	private SensorManager mSensorManager;
 	private Sensor accelerometer;
 	private StepDetectorListener mListener;
@@ -37,7 +37,7 @@ public class StepDetector implements ICustomSensor {
 			acceleration = Math.sqrt(acceleration) / 9.8;
 //			Log.d(TAG, Double.toString(acceleration));
 			if (acceleration > ACCELERATION_THRESHOLD) {
-				long time = SystemClock.elapsedRealtime();
+				long time = System.currentTimeMillis();
 				if (time - lastActive > RELEASE_THRESHOLD) {
 					mListener.onStep();
 				}
@@ -51,7 +51,7 @@ public class StepDetector implements ICustomSensor {
 	
 	public void resume() {
 		mSensorManager.registerListener(mSensorEventListener, accelerometer,
-				SensorManager.SENSOR_DELAY_NORMAL);
+				SensorManager.SENSOR_DELAY_UI);
 	}
 	
 	public void pause() {

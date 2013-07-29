@@ -7,9 +7,9 @@ import com.zacharyliu.stepnavigation.GpsBearing.GpsBearingListener;
 
 public class FakeGpsBearing implements IGpsBearing {
 	
-	private final int DELAY = 500;
-	private final double BEARING = 0.0;
-	private final double[] LOCATION = {40.468184, -74.445385};
+	private final int DELAY = 1000;
+	private final double BEARING = 317.0;
+	private final double[] LOCATION = {40.468138, -74.445318};
 	private boolean enabled = true;
 
 	private GpsBearingListener mListener;
