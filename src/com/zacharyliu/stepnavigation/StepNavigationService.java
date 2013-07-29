@@ -35,7 +35,7 @@ public class StepNavigationService extends Service {
 	private List<ICustomSensor> sensors = new ArrayList<ICustomSensor>();
 	private final IBinder mBinder = new StepNavigationBinder();
 	private List<StepNavigationListener> listeners = new ArrayList<StepNavigationListener>();
-	private GpsBearing gps;
+	private IGpsBearing gps;
 
 	// State variables
 	private boolean calibrated = false;

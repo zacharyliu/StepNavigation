@@ -3,32 +3,52 @@ package com.zacharyliu.stepnavigation;
 import android.content.Context;
 import android.os.Handler;
 
-public class FakeGpsBearing extends GpsBearing {
+import com.zacharyliu.stepnavigation.GpsBearing.GpsBearingListener;
+
+public class FakeGpsBearing implements IGpsBearing {
 	
 	private final int DELAY = 500;
 	private final double BEARING = 0.0;
 	private final double[] LOCATION = {40.468184, -74.445385};
+	private boolean enabled = true;
 
 	private GpsBearingListener mListener;
 	
 	public FakeGpsBearing(Context context, GpsBearingListener listener) {
 		mListener = listener;
+	}
+	
+	@Override
+	public void resume() {
 		final Handler handler = new Handler();
 		Runnable runnable = new Runnable() {
 			@Override
 			public void run() {
 				mListener.onBearingUpdate(BEARING);
 				mListener.onLocationUpdate(LOCATION);
-				handler.postDelayed(this, DELAY);
+				if (enabled)
+					handler.postDelayed(this, DELAY);
 			}
 		};
 		handler.postDelayed(runnable, DELAY);
 	}
-	
-	@Override
-	public void resume() {}
 
 	@Override
-	public void pause() {}
+	public void pause() {
+		enabled = false;
+	}
+
+	@Override
+	public void on() {
+		if (!enabled) {
+			enabled = true;
+			resume();
+		}
+	}
+
+	@Override
+	public void off() {
+		pause();
+	}
 	
 }
