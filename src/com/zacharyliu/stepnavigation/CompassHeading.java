@@ -28,20 +28,30 @@ public class CompassHeading implements ICustomSensor {
 		public void onHeadingUpdate(double heading);
 	}
 	
-	private int count = 0;
-	private final int COUNT_MAX = 5;
 	private SensorEventListener mSensorEventListener = new SensorEventListener() {
 		private float[] accelReadings;
 		private float[] magnetReadings;
 		private double azimuth;
-		private double z;
 		private boolean azimuthReady;
 		private boolean accelReady = false;
 		private boolean magnetReady = false;
+		final private int AVERAGE_SIZE = 3;
+		private double[] history = new double[AVERAGE_SIZE];
+		private int historyIndex = 0;
+		private float y;
+		private float z;
 
 		@Override
 		public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
+		private double average() {
+			double sum = 0.0;
+			for (int i=0; i<history.length; i++) {
+				sum += history[i];
+			}
+			return sum / history.length;
+		}
+		
 		@Override
 		public void onSensorChanged(SensorEvent event) {
 //			if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
@@ -54,10 +64,18 @@ public class CompassHeading implements ICustomSensor {
 			switch (event.sensor.getType()) {
 				case Sensor.TYPE_GRAVITY:
 					accelReadings = event.values.clone();
+					y = accelReadings[1];
+					z = accelReadings[2];
+					accelReadings[2] = -y;
+					accelReadings[1] = z;
 					accelReady = true;
 					break;
 				case Sensor.TYPE_MAGNETIC_FIELD:
 					magnetReadings = event.values.clone();
+					y = magnetReadings[1];
+					z = magnetReadings[2];
+					magnetReadings[2] = -y;
+					magnetReadings[1] = z;
 					magnetReady = true;
 					break;
 			}
@@ -69,29 +87,22 @@ public class CompassHeading implements ICustomSensor {
 					float[] values = new float[3];
 					SensorManager.getOrientation(R, values);
 					azimuth = Math.toDegrees(values[0]);
-//					roll = Math.toDegrees(values[2]);
-//					if (roll > 90 || roll < -90) {
-//						// Upside down, flip azimuth
+//					z = accelReadings[2];
+//					if (z < 0) {
+//						Log.v(TAG, "Flip");
 //						azimuth += 180;
 //					}
-					count++;
-					z = accelReadings[2];
-					if (z < 0) {
-						if (count == COUNT_MAX)
-							Log.d(TAG, "Flip");
-						azimuth += 180;
-					}
-					if (azimuth < 0) {
-						azimuth += 360;
-					} else if (azimuth > 360) {
+					if (azimuth > 360) {
 						azimuth -= 360;
+					} else if (azimuth < 0) {
+						azimuth += 360;
 					}
 					if (!azimuthReady) azimuthReady = true;
+					history[historyIndex] = azimuth;
+					if (++historyIndex == AVERAGE_SIZE) historyIndex = 0;
+					double average = average();
 					mListener.onHeadingUpdate(azimuth);
-					if (count == COUNT_MAX) {
-						Log.d(TAG, Double.toString(azimuth));
-						count = 0;
-					}
+					Log.v(TAG, String.format("Compass: %.2f", azimuth));
 				}
 				
 				// Require a set of new values for each sensor
