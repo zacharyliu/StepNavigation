@@ -1,5 +1,7 @@
 package com.zacharyliu.stepnavigation;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,9 +11,12 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.Vibrator;
 import android.util.Log;
+import android.widget.Toast;
+import au.com.bytecode.opencsv.CSVWriter;
 
 import com.zacharyliu.stepnavigation.CompassHeading.CompassHeadingListener;
 import com.zacharyliu.stepnavigation.GpsBearing.GpsBearingListener;
@@ -41,6 +46,7 @@ public class StepNavigationService extends Service {
 	private double correctionFactor = 0.0;
 	private double realHeading = 0.0;
 	private double[] currentLoc;
+	private CSVWriter writer;
 
 	// Public interfaces, classes, and methods
 	public interface StepNavigationListener {
@@ -70,6 +76,7 @@ public class StepNavigationService extends Service {
 			@Override
 			public void onHeadingUpdate(double heading) {
 				mHeading = heading;
+				writer.writeNext(new String[] {Long.toString(System.currentTimeMillis()), Double.toString(heading)});
 				onDirectionUpdate();
 			}
 		}));
@@ -99,6 +106,15 @@ public class StepNavigationService extends Service {
 
 		for (ICustomSensor sensor : sensors) {
 			sensor.resume();
+		}
+		
+		String filename = Environment.getExternalStorageDirectory().getAbsolutePath() + "/CompassHeading" + Long.toString(System.currentTimeMillis()) + ".csv";
+		Toast.makeText(this, "Logging to: " + filename, Toast.LENGTH_SHORT).show();
+		try {
+			writer = new CSVWriter(new FileWriter(filename));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 		return mBinder;

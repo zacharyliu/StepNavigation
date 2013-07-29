@@ -35,11 +35,12 @@ public class CompassHeading implements ICustomSensor {
 		private boolean azimuthReady;
 		private boolean accelReady = false;
 		private boolean magnetReady = false;
-		final private int AVERAGE_SIZE = 3;
+		final private int AVERAGE_SIZE = 5;
 		private double[] history = new double[AVERAGE_SIZE];
 		private int historyIndex = 0;
 		private float y;
 		private float z;
+		private int count = 0;
 
 		@Override
 		public void onAccuracyChanged(Sensor sensor, int accuracy) {}
@@ -102,7 +103,10 @@ public class CompassHeading implements ICustomSensor {
 					if (++historyIndex == AVERAGE_SIZE) historyIndex = 0;
 					double average = average();
 					mListener.onHeadingUpdate(azimuth);
-					Log.v(TAG, String.format("Compass: %.2f", azimuth));
+					if (++count == AVERAGE_SIZE) {
+						count = 0;
+						Log.v(TAG, String.format("Compass: %.2f", azimuth));
+					}
 				}
 				
 				// Require a set of new values for each sensor
@@ -114,9 +118,9 @@ public class CompassHeading implements ICustomSensor {
 	
 	public void resume() {
 		mSensorManager.registerListener(mSensorEventListener, accelerometer,
-				SensorManager.SENSOR_DELAY_NORMAL);
+				SensorManager.SENSOR_DELAY_UI);
 		mSensorManager.registerListener(mSensorEventListener, magnetometer,
-				SensorManager.SENSOR_DELAY_NORMAL);
+				SensorManager.SENSOR_DELAY_UI);
 	}
 	
 	public void pause() {

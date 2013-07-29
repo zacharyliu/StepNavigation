@@ -9,8 +9,8 @@ import android.os.SystemClock;
 
 public class StepDetector implements ICustomSensor {
 
-	private final double ACCELERATION_THRESHOLD = 1.3;
-	private final int RELEASE_THRESHOLD = 100;
+	private final double ACCELERATION_THRESHOLD = 1.2;
+	private final int RELEASE_THRESHOLD = 200;
 	private SensorManager mSensorManager;
 	private Sensor accelerometer;
 	private StepDetectorListener mListener;
