@@ -45,13 +45,14 @@ public class CompassHeading implements ICustomSensor {
 		@Override
 		public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
-		private double average() {
-			double sum = 0.0;
-			for (int i=0; i<history.length; i++) {
-				sum += history[i];
-			}
-			return sum / history.length;
-		}
+		// TODO: fix average function to work with 0-360 wrapped values
+//		private double average() {
+//			double sum = 0.0;
+//			for (int i=0; i<history.length; i++) {
+//				sum += history[i];
+//			}
+//			return sum / history.length;
+//		}
 		
 		@Override
 		public void onSensorChanged(SensorEvent event) {
@@ -95,7 +96,7 @@ public class CompassHeading implements ICustomSensor {
 					if (!azimuthReady) azimuthReady = true;
 					history[historyIndex] = azimuth;
 					if (++historyIndex == AVERAGE_SIZE) historyIndex = 0;
-					double average = average();
+					//double average = average();
 					mListener.onHeadingUpdate(azimuth);
 					if (++count == AVERAGE_SIZE) {
 						count = 0;
