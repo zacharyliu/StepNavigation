@@ -133,8 +133,8 @@ public class CompassHeading implements ICustomSensor {
 			double itemY = Math.sin(item);
 			
 			if (!averagesX.isEmpty()) {
-				itemX = circularWeightedMean(new double[] {item, averagesX.getLast()}, weights);
-				itemY = circularWeightedMean(new double[] {item, averagesY.getLast()}, weights);
+				itemX = circularWeightedMean(new double[] {itemX, averagesX.getLast()}, weights);
+				itemY = circularWeightedMean(new double[] {itemY, averagesY.getLast()}, weights);
 			}
 			
 			averagesX.add(itemX);
@@ -155,10 +155,10 @@ public class CompassHeading implements ICustomSensor {
 			double minX = Collections.min(averagesX);
 			double minY = Collections.min(averagesY);
 			
-			double max = Math.atan2(maxY, maxX);
-			double min = Math.atan2(minY, minX);
+			double midX = (maxX - minX) / 2 + minX;
+			double midY = (maxY - minY) / 2 + minY;
 			
-			return (max - min) / 2 + min;
+			return Math.atan2(midY, midX);
 		}
 	}
 	
