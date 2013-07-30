@@ -133,8 +133,8 @@ public class CompassHeading implements ICustomSensor {
 			double itemY = Math.sin(item);
 			
 			if (!averagesX.isEmpty()) {
-				itemX = circularWeightedMean(new double[] {itemX, averagesX.getLast()}, weights);
-				itemY = circularWeightedMean(new double[] {itemY, averagesY.getLast()}, weights);
+				itemX = ALPHA * itemX + (1-ALPHA) * averagesX.getLast();
+				itemY = ALPHA * itemY + (1-ALPHA) * averagesY.getLast();
 			}
 			
 			averagesX.add(itemX);
