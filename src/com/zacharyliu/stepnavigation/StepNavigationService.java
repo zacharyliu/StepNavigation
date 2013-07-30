@@ -80,7 +80,7 @@ public class StepNavigationService extends Service {
 				onDirectionUpdate();
 			}
 		}));
-		gps = new GpsBearing(this, new GpsBearingListener() {
+		gps = new FakeGpsBearing(this, new GpsBearingListener() {
 			@Override
 			public void onBearingUpdate(double bearing) {
 				mBearing = bearing;
