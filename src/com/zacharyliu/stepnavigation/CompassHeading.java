@@ -38,8 +38,8 @@ public class CompassHeading implements ICustomSensor {
 		final private int AVERAGE_SIZE = 5;
 		private double[] history = new double[AVERAGE_SIZE];
 		private int historyIndex = 0;
+		private float x;
 		private float y;
-		private float z;
 		private int count = 0;
 
 		@Override
@@ -58,12 +58,12 @@ public class CompassHeading implements ICustomSensor {
 		public void onSensorChanged(SensorEvent event) {
 			float[] readings = event.values.clone();
 			
-			// Swap y and z axes to change azimuth to read based on screen facing direction
+			// Swap y and x axes to change azimuth to read based on side pointing direction
+			x = readings[0];
 			y = readings[1];
-			z = readings[2];
 			// Need to make one axis negative to maintain right-hand system since only one axis swap made
-			readings[2] = -y;
-			readings[1] = z;
+			readings[1] = -x;
+			readings[0] = y;
 			
 			switch (event.sensor.getType()) {
 				case Sensor.TYPE_GRAVITY:
