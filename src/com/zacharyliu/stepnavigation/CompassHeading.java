@@ -1,5 +1,10 @@
 package com.zacharyliu.stepnavigation;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Queue;
+
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -14,6 +19,11 @@ public class CompassHeading implements ICustomSensor {
 	private Sensor accelerometer;
 	private Sensor magnetometer;
 	private CompassHeadingListener mListener;
+	private final int AVERAGE_SIZE = 5;
+	private int count = 0;
+	private final double TWOPI = 2*Math.PI;
+	
+	private CompassHeadingQueue queue = new CompassHeadingQueue();
 
 	public CompassHeading(Context context, CompassHeadingListener listener) {
 		mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
@@ -35,12 +45,8 @@ public class CompassHeading implements ICustomSensor {
 		private boolean azimuthReady;
 		private boolean accelReady = false;
 		private boolean magnetReady = false;
-		final private int AVERAGE_SIZE = 5;
-		private double[] history = new double[AVERAGE_SIZE];
-		private int historyIndex = 0;
 		private float x;
 		private float y;
-		private int count = 0;
 
 		@Override
 		public void onAccuracyChanged(Sensor sensor, int accuracy) {}
@@ -82,26 +88,19 @@ public class CompassHeading implements ICustomSensor {
 				if (success) {
 					float[] values = new float[3];
 					SensorManager.getOrientation(R, values);
-					azimuth = Math.toDegrees(values[0]);
+					azimuth = values[0];
 //					z = accelReadings[2];
 //					if (z < 0) {
 //						Log.v(TAG, "Flip");
-//						azimuth += 180;
+//						azimuth += Math.PI;
 //					}
-					if (azimuth > 360) {
-						azimuth -= 360;
-					} else if (azimuth < 0) {
-						azimuth += 360;
-					}
+//					if (azimuth > TWOPI) {
+//						azimuth -= TWOPI;
+//					} else if (azimuth < 0) {
+//						azimuth += TWOPI;
+//					}
 					if (!azimuthReady) azimuthReady = true;
-					history[historyIndex] = azimuth;
-					if (++historyIndex == AVERAGE_SIZE) historyIndex = 0;
-					//double average = average();
-					mListener.onHeadingUpdate(azimuth);
-					if (++count == AVERAGE_SIZE) {
-						count = 0;
-						Log.v(TAG, String.format("Compass: %.2f", azimuth));
-					}
+					queue.update(azimuth);
 				}
 				
 				// Require a set of new values for each sensor
@@ -110,6 +109,84 @@ public class CompassHeading implements ICustomSensor {
 			}
 		}
 	};
+	
+	private class CompassHeadingQueue {
+		private LinkedList<Double> averagesX = new LinkedList<Double>();
+		private LinkedList<Double> averagesY = new LinkedList<Double>();
+		private final double ALPHA = 0.2;
+		private final double[] weights = {ALPHA, 1-ALPHA};
+		private final int SIZE = 20;
+		
+		public void update(double headingRadians) {
+			add(headingRadians);
+			double result = Math.toDegrees(getMidpoint());
+			mListener.onHeadingUpdate(result);
+			
+			if (++count == AVERAGE_SIZE) {
+				count = 0;
+				Log.v(TAG, String.format("Compass: %.2f degrees", result));
+			}
+		}
+		
+		public void add(double item) {
+			double itemX = Math.cos(item);
+			double itemY = Math.sin(item);
+			
+			if (!averagesX.isEmpty()) {
+				itemX = circularWeightedMean(new double[] {itemX, averagesX.getLast()}, weights);
+				itemY = circularWeightedMean(new double[] {itemY, averagesY.getLast()}, weights);
+			}
+			
+			averagesX.add(itemX);
+			averagesY.add(itemY);
+			
+			trim(averagesX);
+			trim(averagesY);
+		}
+		
+		private void trim(LinkedList<?> list) {
+			while (list.size() > SIZE)
+				list.remove();
+		}
+		
+		public double getMidpoint() {
+			double maxX = Collections.max(averagesX);
+			double maxY = Collections.max(averagesY);
+			double minX = Collections.min(averagesX);
+			double minY = Collections.min(averagesY);
+			
+			double midX = (maxX - minX) / 2 + minX;
+			double midY = (maxY - minY) / 2 + minY;
+			
+			return Math.atan2(midY, midX);
+		}
+	}
+	
+	public static double circularMean(double[] nums) {
+		double sumX = 0.0;
+		double sumY = 0.0;
+		
+		for (int i=0; i<nums.length; i++) {
+			sumX += Math.cos(nums[i]);
+			sumY += Math.sin(nums[i]);
+		}
+		
+		return Math.atan2(sumY/nums.length, sumX/nums.length);
+	}
+	
+	public static double circularWeightedMean(double[] nums, double[] weights) {
+		double sumX = 0.0;
+		double sumY = 0.0;
+		double sumWeights = 0.0;
+		
+		for (int i=0; i<nums.length; i++) {
+			sumX += Math.cos(nums[i]) * weights[i];
+			sumY += Math.sin(nums[i]) * weights[i];
+			sumWeights += weights[i];
+		}
+		
+		return Math.atan2(sumY/sumWeights, sumX/sumWeights);
+	}
 	
 	public void resume() {
 		mSensorManager.registerListener(mSensorEventListener, accelerometer,
