@@ -25,8 +25,8 @@ public class StepNavigationService extends Service {
 //	private final String TAG = "StepNavigationService";
 	private final double STEP_LENGTH_METERS = 0.8; // http://www.wolframalpha.com/input/?i=step+length+in+meters
 	private final double EARTH_RADIUS_KILOMETERS = 6371;
-	private final int HISTORY_COUNT = 10;
-	private final double CALIBRATION_THRESHOLD = 10.0 / 180.0 * Math.PI;
+	private final int HISTORY_COUNT = 5;
+	private final double CALIBRATION_THRESHOLD = 10.0;
 	public static final int TYPE_LOCATION = 1;
 	public static final int TYPE_CALIBRATED_HEADING = 2;
 	public static final int TYPE_COMPASS_HEADING_FILTERED = 6;
