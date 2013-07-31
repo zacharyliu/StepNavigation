@@ -14,7 +14,6 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.Vibrator;
-import android.util.Log;
 
 import com.zacharyliu.stepnavigation.CompassHeading.CompassHeadingListener;
 import com.zacharyliu.stepnavigation.GpsBearing.GpsBearingListener;
@@ -23,7 +22,7 @@ import com.zacharyliu.stepnavigation.StepDetector.StepDetectorListener;
 public class StepNavigationService extends Service {
 
 	// Constants
-	private final String TAG = "StepNavigationService";
+//	private final String TAG = "StepNavigationService";
 	private final double STEP_LENGTH_METERS = 0.8; // http://www.wolframalpha.com/input/?i=step+length+in+meters
 	private final double EARTH_RADIUS_KILOMETERS = 6371;
 	private final int HISTORY_COUNT = 10;
@@ -73,7 +72,7 @@ public class StepNavigationService extends Service {
 	 * @param listener listener object to receive location updates
 	 */
 	public void register(StepNavigationListener listener) {
-		Log.d(TAG, "Adding listener " + listener.toString());
+//		Log.d(TAG, "Adding listener " + listener.toString());
 		listeners.add(listener);
 	}
 	
@@ -91,7 +90,7 @@ public class StepNavigationService extends Service {
 	 * @param listener
 	 */
 	public void unregister(StepNavigationListener listener) {
-		Log.d(TAG, "Removing listener " + listener.toString());
+//		Log.d(TAG, "Removing listener " + listener.toString());
 		listeners.remove(listener);
 	}
 	
@@ -103,7 +102,7 @@ public class StepNavigationService extends Service {
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		Log.d(TAG, "Service bound");
+//		Log.d(TAG, "Service bound");
 		sensors.add(new CompassHeading(this, new CompassHeadingListener() {
 			@Override
 			public void onHeadingUpdate(double heading, double headingRaw) {
@@ -123,7 +122,7 @@ public class StepNavigationService extends Service {
 			
 			@Override
 			public void onLocationUpdate(double[] loc) {
-				Log.d(TAG, "GPS location updated");
+//				Log.d(TAG, "GPS location updated");
 				gpsReady = true;
 				if (!calibrated) {
 					onNewLocation(loc);
@@ -156,11 +155,11 @@ public class StepNavigationService extends Service {
 
 	// TODO: fix calibration calculations
 	private boolean calibrate() {
-		Log.d(TAG, "Calibration begin");
+//		Log.d(TAG, "Calibration begin");
 
 		// If history is not filled completely, exit
 		if (history.size() != HISTORY_COUNT) {
-			Log.d(TAG, "Not enough history entries");
+//			Log.d(TAG, "Not enough history entries");
 			return false;
 		}
 
@@ -173,9 +172,9 @@ public class StepNavigationService extends Service {
 		var /= HISTORY_COUNT - 1;
 		double std = Math.sqrt(var);
 
-		Log.d(TAG, "Standard deviation: " + Double.toString(std)
-				+ " (threshold: " + Double.toString(CALIBRATION_THRESHOLD)
-				+ ")");
+//		Log.d(TAG, "Standard deviation: " + Double.toString(std)
+//				+ " (threshold: " + Double.toString(CALIBRATION_THRESHOLD)
+//				+ ")");
 
 		// If standard deviation above threshold, exit
 		if (std > CALIBRATION_THRESHOLD)
@@ -183,7 +182,7 @@ public class StepNavigationService extends Service {
 
 		// Set factors and return
 		correctionFactor = avg;
-		Log.d(TAG, "Calibration succeeded");
+//		Log.d(TAG, "Calibration succeeded");
 		return true;
 	}
 
@@ -196,8 +195,8 @@ public class StepNavigationService extends Service {
 	}
 
 	private void onStep() {
-		Log.d(TAG, "step");
-		Log.d(TAG, String.format("Compass: %.3f", mHeading));
+//		Log.d(TAG, "step");
+//		Log.d(TAG, String.format("Compass: %.3f", mHeading));
 
 		// If GPS is on, add to the calibration history
 		if (gpsReady && mBearing != 0.0) {
@@ -208,7 +207,7 @@ public class StepNavigationService extends Service {
 				history.remove();
 			}
 		} else {
-			Log.d(TAG, "GPS not ready");
+//			Log.d(TAG, "GPS not ready");
 		}
 
 		// TODO: Determine if recalibration is needed
@@ -231,10 +230,10 @@ public class StepNavigationService extends Service {
 
 		// Calculate new location if possible
 		if (calibrated && currentLoc != null) {
-			Log.d(TAG, String.format("GPS %.2f | compass %.2f | calibrated %.2f", mBearing, mHeading, realHeading));
+//			Log.d(TAG, String.format("GPS %.2f | compass %.2f | calibrated %.2f", mBearing, mHeading, realHeading));
 			calculateNewLocation();
 		} else {
-			Log.d(TAG, String.format("GPS %.2f | compass %.2f", mBearing, mHeading));
+//			Log.d(TAG, String.format("GPS %.2f | compass %.2f", mBearing, mHeading));
 		}
 	}
 
@@ -254,8 +253,8 @@ public class StepNavigationService extends Service {
 		lat2 = Math.toDegrees(lat2);
 		lon2 = Math.toDegrees(lon2);
 
-		Log.v(TAG, "delta lat: " + Double.toString(lat2 - currentLoc[0])
-				+ ", delta lon: " + Double.toString(lon2 - currentLoc[1]));
+//		Log.v(TAG, "delta lat: " + Double.toString(lat2 - currentLoc[0])
+//				+ ", delta lon: " + Double.toString(lon2 - currentLoc[1]));
 
 		double[] newLoc = { lat2, lon2 };
 		onNewLocation(newLoc);
