@@ -1,5 +1,7 @@
 package com.zacharyliu.stepnavigation;
 
+import java.util.Collection;
+
 public class AngleMath {
 	public static final int RADIANS = 1;
 	public static final int DEGREES = 2;
@@ -12,6 +14,14 @@ public class AngleMath {
 			diff = (diff+Math.PI) % (2*Math.PI) - Math.PI;
 		}
 		return diff;
+	}
+	
+	public static double rangeHeading(double headingDeg) {
+		while (headingDeg > 360)
+			headingDeg -= 360;
+		while (headingDeg < 0)
+			headingDeg += 360;
+		return headingDeg;
 	}
 	
 	public static double average(int angleType, double[] angles) {
@@ -34,6 +44,15 @@ public class AngleMath {
 			mean = Math.toDegrees(mean);
 		}
 		return mean;
+	}
+	
+	public static double average(int angleType, Collection<Double> angles) {
+		double[] anglesRawArray = new double[angles.size()];
+		Object[] anglesObjectArray = angles.toArray();
+		for (int i=0; i<angles.size(); i++) {
+			anglesRawArray[i] = (Double) anglesObjectArray[i];
+		}
+		return average(angleType, anglesRawArray);
 	}
 	
 	public static double weightedAverage(int angleType, double[] angles, double[] weights) {

@@ -28,7 +28,6 @@ public class StepNavigationService extends Service {
 	private final double EARTH_RADIUS_KILOMETERS = 6371;
 	private final int HISTORY_COUNT = 10;
 	private final double CALIBRATION_THRESHOLD = 10.0 / 180.0 * Math.PI;
-	private final double TWOPI = 2 * Math.PI;
 	public static final int TYPE_LOCATION = 1;
 	public static final int TYPE_CALIBRATED_HEADING = 2;
 	public static final int TYPE_COMPASS_HEADING_FILTERED = 6;
@@ -79,7 +78,6 @@ public class StepNavigationService extends Service {
 	}
 	
 	public void register(StepNavigationMultiListener listener, int type) {
-		Log.d(TAG, "Adding type " + Integer.toString(type) + " listener " + listener.toString());
 		// Check if entry for sensor type exists
 		if (!multiListeners.containsKey(type)) {
 			multiListeners.put(type, new ArrayList<StepNavigationMultiListener>());
@@ -167,14 +165,10 @@ public class StepNavigationService extends Service {
 		}
 
 		// Take standard deviation
-		double sum = 0.0;
-		for (double item : history) {
-			sum += item;
-		}
-		double avg = sum / HISTORY_COUNT;
+		double avg = AngleMath.average(AngleMath.DEGREES, history);
 		double var = 0.0;
 		for (double item : history) {
-			var += Math.pow(item - avg, 2);
+			var += Math.pow(AngleMath.difference(AngleMath.DEGREES, item, avg), 2);
 		}
 		var /= HISTORY_COUNT - 1;
 		double std = Math.sqrt(var);
@@ -197,10 +191,7 @@ public class StepNavigationService extends Service {
 	private void onDirectionUpdate() {
 //		Log.v(TAG, "Compass heading: " + Double.toString(mHeading));
 		realHeading = mHeading + correctionFactor;
-		while (realHeading > 360)
-			realHeading -= 360;
-		while (realHeading < 0)
-			realHeading += 360;
+		realHeading = AngleMath.rangeHeading(realHeading);
 		callListeners(TYPE_CALIBRATED_HEADING, new double[] {realHeading});
 	}
 
@@ -211,7 +202,7 @@ public class StepNavigationService extends Service {
 		// If GPS is on, add to the calibration history
 		if (gpsReady && mBearing != 0.0) {
 			// Add the current heading difference to the list
-			double diff = mBearing - mHeading;
+			double diff = AngleMath.difference(AngleMath.DEGREES, mBearing, mHeading);
 			history.add(diff);
 			while (history.size() > HISTORY_COUNT) {
 				history.remove();
@@ -252,7 +243,7 @@ public class StepNavigationService extends Service {
 		// Formula: http://www.movable-type.co.uk/scripts/latlong.html#destPoint
 		double lat1 = Math.toRadians(currentLoc[0]); // starting latitude
 		double lon1 = Math.toRadians(currentLoc[1]); // starting longitude
-		double brng = realHeading; // bearing
+		double brng = Math.toRadians(realHeading); // bearing
 		double d = STEP_LENGTH_METERS / 1000; // distance traveled
 		double R = EARTH_RADIUS_KILOMETERS; // radius of Earth
 		double lat2 = Math.asin(Math.sin(lat1) * Math.cos(d / R)

@@ -33,7 +33,8 @@ public class GpsBearing implements ICustomSensor, IGpsBearing {
 		@Override
 		public void onLocationChanged(Location location) {
 			bearing = location.getBearing();
-			mListener.onBearingUpdate(bearing);
+			if (bearing != 0.0)
+				mListener.onBearingUpdate(bearing);
 
 			double[] loc = { location.getLatitude(), location.getLongitude() };
 			mListener.onLocationUpdate(loc);
