@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -44,6 +45,7 @@ public class StepNavigationService extends Service {
 	private List<ICustomSensor> sensors = new ArrayList<ICustomSensor>();
 	private final IBinder mBinder = new StepNavigationBinder();
 	private List<StepNavigationListener> listeners = new ArrayList<StepNavigationListener>();
+	@SuppressLint("UseSparseArrays")
 	private Map<Integer, List<StepNavigationMultiListener>> multiListeners = new HashMap<Integer, List<StepNavigationMultiListener>>();
 	private IGpsBearing gps;
 
@@ -74,7 +76,7 @@ public class StepNavigationService extends Service {
 	}
 
 	/**
-	 * @deprecated Use the unregister(listener, type) method for support for additional events.
+	 * @deprecated Use the unregister(listener, type) method with support for additional events.
 	 * @param listener listener object to receive location updates
 	 */
 	public void register(StepNavigationListener listener) {
