@@ -3,8 +3,10 @@ package com.zacharyliu.stepnavigation;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 import android.app.Service;
@@ -29,12 +31,20 @@ public class StepNavigationService extends Service {
 	private final double STEP_LENGTH_METERS = 0.8; // http://www.wolframalpha.com/input/?i=step+length+in+meters
 	private final double EARTH_RADIUS_KILOMETERS = 6371;
 	private final int HISTORY_COUNT = 10;
-	private final double CALIBRATION_THRESHOLD = 10.0;
+	private final double CALIBRATION_THRESHOLD = 10.0 / 180.0 * Math.PI;
+	private final double TWOPI = 2 * Math.PI;
+	public final int TYPE_LOCATION = 1;
+	public final int TYPE_CALIBRATED_HEADING = 2;
+	public final int TYPE_COMPASS_HEADING_FILTERED = 6;
+	public final int TYPE_COMPASS_HEADING_RAW = 3;
+	public final int TYPE_GPS_BEARING = 4;
+	public final int TYPE_STEP = 5;
 
 	// Object storage
 	private List<ICustomSensor> sensors = new ArrayList<ICustomSensor>();
 	private final IBinder mBinder = new StepNavigationBinder();
 	private List<StepNavigationListener> listeners = new ArrayList<StepNavigationListener>();
+	private Map<Integer, List<StepNavigationMultiListener>> multiListeners = new HashMap<Integer, List<StepNavigationMultiListener>>();
 	private IGpsBearing gps;
 
 	// State variables
@@ -52,6 +62,10 @@ public class StepNavigationService extends Service {
 	public interface StepNavigationListener {
 		public void onLocationUpdate(double latitude, double longitude);
 	}
+	
+	public interface StepNavigationMultiListener {
+		public void onSensorChanged(int type, double[] values);
+	}
 
 	public class StepNavigationBinder extends Binder {
 		public StepNavigationService getService() {
@@ -59,14 +73,38 @@ public class StepNavigationService extends Service {
 		}
 	}
 
+	/**
+	 * @deprecated Use the unregister(listener, type) method for support for additional events.
+	 * @param listener listener object to receive location updates
+	 */
 	public void register(StepNavigationListener listener) {
 		Log.d(TAG, "Adding listener " + listener.toString());
 		listeners.add(listener);
 	}
+	
+	public void register(StepNavigationMultiListener listener, int type) {
+		Log.d(TAG, "Adding type " + Integer.toString(type) + " listener " + listener.toString());
+		// Check if entry for sensor type exists
+		if (!multiListeners.containsKey(type)) {
+			multiListeners.put(type, new ArrayList<StepNavigationMultiListener>());
+		}
+		multiListeners.get(type).add(listener);
+	}
 
+	
+	/**
+	 * @deprecated Deprecated along with register(listener) method.
+	 * @param listener
+	 */
 	public void unregister(StepNavigationListener listener) {
 		Log.d(TAG, "Removing listener " + listener.toString());
 		listeners.remove(listener);
+	}
+	
+	public void unregister(StepNavigationMultiListener listener) {
+		for (List<StepNavigationMultiListener> item : multiListeners.values()) {
+			item.remove(listener);
+		}
 	}
 
 	@Override
@@ -76,6 +114,8 @@ public class StepNavigationService extends Service {
 			@Override
 			public void onHeadingUpdate(double heading, double headingRaw) {
 				mHeading = heading;
+				callListeners(TYPE_COMPASS_HEADING_FILTERED, new double[] {headingRaw});
+				callListeners(TYPE_COMPASS_HEADING_RAW, new double[] {headingRaw});
 				writer.writeNext(new String[] {Long.toString(System.currentTimeMillis()), Double.toString(heading), Double.toString(headingRaw)});
 				onDirectionUpdate();
 			}
@@ -84,9 +124,10 @@ public class StepNavigationService extends Service {
 			@Override
 			public void onBearingUpdate(double bearing) {
 				mBearing = bearing;
+				callListeners(TYPE_GPS_BEARING, new double[] {bearing});
 				onDirectionUpdate();
 			}
-
+			
 			@Override
 			public void onLocationUpdate(double[] loc) {
 				Log.d(TAG, "GPS location updated");
@@ -100,6 +141,7 @@ public class StepNavigationService extends Service {
 		sensors.add(new StepDetector(this, new StepDetectorListener() {
 			@Override
 			public void onStep() {
+				callListeners(TYPE_STEP, null);
 				StepNavigationService.this.onStep();
 			}
 		}));
@@ -168,10 +210,11 @@ public class StepNavigationService extends Service {
 	private void onDirectionUpdate() {
 //		Log.v(TAG, "Compass heading: " + Double.toString(mHeading));
 		realHeading = mHeading + correctionFactor;
-		if (realHeading > 360)
-			realHeading -= 360;
+		if (realHeading > TWOPI)
+			realHeading -= TWOPI;
 		if (realHeading < 0)
-			realHeading += 360;
+			realHeading += TWOPI;
+		callListeners(TYPE_CALIBRATED_HEADING, new double[] {realHeading});
 	}
 
 	private void onStep() {
@@ -223,7 +266,7 @@ public class StepNavigationService extends Service {
 		// Formula: http://www.movable-type.co.uk/scripts/latlong.html#destPoint
 		double lat1 = Math.toRadians(currentLoc[0]); // starting latitude
 		double lon1 = Math.toRadians(currentLoc[1]); // starting longitude
-		double brng = Math.toRadians(realHeading); // bearing
+		double brng = realHeading; // bearing
 		double d = STEP_LENGTH_METERS / 1000; // distance traveled
 		double R = EARTH_RADIUS_KILOMETERS; // radius of Earth
 		double lat2 = Math.asin(Math.sin(lat1) * Math.cos(d / R)
@@ -239,12 +282,21 @@ public class StepNavigationService extends Service {
 
 		double[] newLoc = { lat2, lon2 };
 		onNewLocation(newLoc);
+		callListeners(TYPE_LOCATION, newLoc);
 	}
 
 	private void onNewLocation(double[] loc) {
 		currentLoc = loc;
 		for (StepNavigationListener listener : listeners) {
 			listener.onLocationUpdate(loc[0], loc[1]);
+		}
+	}
+	
+	private void callListeners(int type, double[] values) {
+		if (multiListeners.containsKey(type)) {
+			for (StepNavigationMultiListener listener : multiListeners.get(type)) {
+				listener.onSensorChanged(type, values);
+			}
 		}
 	}
 

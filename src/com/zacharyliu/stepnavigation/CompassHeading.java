@@ -65,12 +65,12 @@ public class CompassHeading implements ICustomSensor {
 		
 		public void update(double headingRadians) {
 			add(headingRadians);
-			double result = Math.toDegrees(getMidpoint());
-			mListener.onHeadingUpdate(result, Math.toDegrees(headingRadians));
+			double result = getMidpoint();
+			mListener.onHeadingUpdate(result, headingRadians);
 			
 			if (++count == AVERAGE_SIZE) {
 				count = 0;
-				Log.v(TAG, String.format("Compass: %.2f degrees", result));
+				Log.v(TAG, String.format("Compass: %.2f degrees", Math.toDegrees(result)));
 			}
 		}
 		
