@@ -34,12 +34,12 @@ public class StepNavigationService extends Service {
 	private final int HISTORY_COUNT = 10;
 	private final double CALIBRATION_THRESHOLD = 10.0 / 180.0 * Math.PI;
 	private final double TWOPI = 2 * Math.PI;
-	public final int TYPE_LOCATION = 1;
-	public final int TYPE_CALIBRATED_HEADING = 2;
-	public final int TYPE_COMPASS_HEADING_FILTERED = 6;
-	public final int TYPE_COMPASS_HEADING_RAW = 3;
-	public final int TYPE_GPS_BEARING = 4;
-	public final int TYPE_STEP = 5;
+	public static final int TYPE_LOCATION = 1;
+	public static final int TYPE_CALIBRATED_HEADING = 2;
+	public static final int TYPE_COMPASS_HEADING_FILTERED = 6;
+	public static final int TYPE_COMPASS_HEADING_RAW = 3;
+	public static final int TYPE_GPS_BEARING = 4;
+	public static final int TYPE_STEP = 5;
 
 	// Object storage
 	private List<ICustomSensor> sensors = new ArrayList<ICustomSensor>();
