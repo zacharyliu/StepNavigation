@@ -1,9 +1,7 @@
 package com.zacharyliu.stepnavigation;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.Queue;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -19,9 +17,8 @@ public class CompassHeading implements ICustomSensor {
 	private Sensor accelerometer;
 	private Sensor magnetometer;
 	private CompassHeadingListener mListener;
-	private final int AVERAGE_SIZE = 5;
+	private final int AVERAGE_SIZE = 10;
 	private int count = 0;
-	private final double TWOPI = 2*Math.PI;
 	
 	private CompassHeadingQueue queue = new CompassHeadingQueue();
 
@@ -33,7 +30,7 @@ public class CompassHeading implements ICustomSensor {
 	}
 	
 	public interface CompassHeadingListener {
-		public void onHeadingUpdate(double heading);
+		public void onHeadingUpdate(double heading, double headingRaw);
 	}
 	
 	private SensorEventListener mSensorEventListener = new SensorEventListener() {
@@ -54,7 +51,7 @@ public class CompassHeading implements ICustomSensor {
 		
 		@Override
 		public void onSensorChanged(SensorEvent event) {
-			azimuth = -event.values[2];
+			azimuth = -Math.PI * event.values[2];
 			if (!azimuthReady) azimuthReady = true;
 			queue.update(azimuth);
 		}
@@ -63,14 +60,13 @@ public class CompassHeading implements ICustomSensor {
 	private class CompassHeadingQueue {
 		private LinkedList<Double> averagesX = new LinkedList<Double>();
 		private LinkedList<Double> averagesY = new LinkedList<Double>();
-		private final double ALPHA = 0.2;
-		private final double[] weights = {ALPHA, 1-ALPHA};
+		private final double ALPHA = 0.1;
 		private final int SIZE = 20;
 		
 		public void update(double headingRadians) {
 			add(headingRadians);
 			double result = Math.toDegrees(getMidpoint());
-			mListener.onHeadingUpdate(result);
+			mListener.onHeadingUpdate(result, Math.toDegrees(headingRadians));
 			
 			if (++count == AVERAGE_SIZE) {
 				count = 0;

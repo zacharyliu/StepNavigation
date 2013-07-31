@@ -74,9 +74,9 @@ public class StepNavigationService extends Service {
 		Log.d(TAG, "Service bound");
 		sensors.add(new CompassHeading(this, new CompassHeadingListener() {
 			@Override
-			public void onHeadingUpdate(double heading) {
+			public void onHeadingUpdate(double heading, double headingRaw) {
 				mHeading = heading;
-				writer.writeNext(new String[] {Long.toString(System.currentTimeMillis()), Double.toString(heading)});
+				writer.writeNext(new String[] {Long.toString(System.currentTimeMillis()), Double.toString(heading), Double.toString(headingRaw)});
 				onDirectionUpdate();
 			}
 		}));
