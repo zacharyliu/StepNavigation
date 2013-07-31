@@ -34,26 +34,17 @@ public class CompassHeading implements ICustomSensor {
 	}
 	
 	private SensorEventListener mSensorEventListener = new SensorEventListener() {
-		private double azimuth;
+		private double angle;
 		private boolean azimuthReady;
 
 		@Override
 		public void onAccuracyChanged(Sensor sensor, int accuracy) {}
-
-		// TODO: fix average function to work with 0-360 wrapped values
-//		private double average() {
-//			double sum = 0.0;
-//			for (int i=0; i<history.length; i++) {
-//				sum += history[i];
-//			}
-//			return sum / history.length;
-//		}
 		
 		@Override
 		public void onSensorChanged(SensorEvent event) {
-			azimuth = -Math.PI * event.values[2];
+			angle = Math.PI * event.values[2];
 			if (!azimuthReady) azimuthReady = true;
-			queue.update(azimuth);
+			queue.update(angle);
 		}
 	};
 	
@@ -63,15 +54,26 @@ public class CompassHeading implements ICustomSensor {
 		private final double ALPHA = 0.1;
 		private final int SIZE = 20;
 		
-		public void update(double headingRadians) {
-			add(headingRadians);
-			double result = getMidpoint();
-			mListener.onHeadingUpdate(result, headingRadians);
+		public void update(double rawAngle) {
+			add(rawAngle);
+			double newAngle = getMidpoint();
+			mListener.onHeadingUpdate(angleToHeading(newAngle), angleToHeading(rawAngle));
 			
 			if (++count == AVERAGE_SIZE) {
 				count = 0;
-				Log.v(TAG, String.format("Compass: %.2f degrees", Math.toDegrees(result)));
+				Log.v(TAG, String.format("Compass: %.2f degrees", angleToHeading(newAngle)));
 			}
+		}
+		
+		/**
+		 * Converts an angle in range [-pi, pi] to heading in range [0,360]
+		 * Note: does not perform axes rotation, still good for relative angles
+		 * 
+		 * @param angle (radians)
+		 * @return heading (degrees)
+		 */
+		private double angleToHeading(double angle) {
+			return Math.toDegrees(-angle + Math.PI);
 		}
 		
 		public void add(double item) {
@@ -106,32 +108,6 @@ public class CompassHeading implements ICustomSensor {
 			
 			return Math.atan2(midY, midX);
 		}
-	}
-	
-	public static double circularMean(double[] nums) {
-		double sumX = 0.0;
-		double sumY = 0.0;
-		
-		for (int i=0; i<nums.length; i++) {
-			sumX += Math.cos(nums[i]);
-			sumY += Math.sin(nums[i]);
-		}
-		
-		return Math.atan2(sumY/nums.length, sumX/nums.length);
-	}
-	
-	public static double circularWeightedMean(double[] nums, double[] weights) {
-		double sumX = 0.0;
-		double sumY = 0.0;
-		double sumWeights = 0.0;
-		
-		for (int i=0; i<nums.length; i++) {
-			sumX += Math.cos(nums[i]) * weights[i];
-			sumY += Math.sin(nums[i]) * weights[i];
-			sumWeights += weights[i];
-		}
-		
-		return Math.atan2(sumY/sumWeights, sumX/sumWeights);
 	}
 	
 	public void resume() {

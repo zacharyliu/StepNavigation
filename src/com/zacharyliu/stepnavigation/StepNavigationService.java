@@ -197,10 +197,10 @@ public class StepNavigationService extends Service {
 	private void onDirectionUpdate() {
 //		Log.v(TAG, "Compass heading: " + Double.toString(mHeading));
 		realHeading = mHeading + correctionFactor;
-		if (realHeading > TWOPI)
-			realHeading -= TWOPI;
-		if (realHeading < 0)
-			realHeading += TWOPI;
+		while (realHeading > 360)
+			realHeading -= 360;
+		while (realHeading < 0)
+			realHeading += 360;
 		callListeners(TYPE_CALIBRATED_HEADING, new double[] {realHeading});
 	}
 
@@ -210,7 +210,6 @@ public class StepNavigationService extends Service {
 
 		// If GPS is on, add to the calibration history
 		if (gpsReady && mBearing != 0.0) {
-			
 			// Add the current heading difference to the list
 			double diff = mBearing - mHeading;
 			history.add(diff);
