@@ -42,7 +42,7 @@ public class CompassHeading implements ICustomSensor {
 		
 		@Override
 		public void onSensorChanged(SensorEvent event) {
-			angle = Math.PI * event.values[2];
+			angle = 2.0 * Math.asin(event.values[2]);
 			if (!azimuthReady) azimuthReady = true;
 			queue.update(angle);
 		}
